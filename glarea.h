@@ -35,7 +35,8 @@ protected:
     void doProjection();
     void resizeGL(int w, int h) override;
     void paintGL() override;
-    void paintPiston(QMatrix4x4 matrix2, float taille);
+    void paintPiston(QMatrix4x4 matrix2, int i);
+    void paintMoteur (QMatrix4x4 matrix2);
     void keyPressEvent(QKeyEvent *ev) override;
     void keyReleaseEvent(QKeyEvent *ev) override;
     void mousePressEvent(QMouseEvent *ev) override;
@@ -44,12 +45,14 @@ protected:
     void paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_fac, GLfloat coul_r, GLfloat coul_v, GLfloat coul_b);
 
 private:
-    double m_angle = 90;
+    double m_angle = 0;
     QTimer *m_timer = nullptr;
     double m_anim = 90;
-    double m_radius = 0.05;
+    double m_radius = 2.7;
     double m_ratio = 50;
     double m_alpha = 0;
+    double rotate = 0;
+    double deplacement = -3;
     int X = 0;
     int Y = 1;
     int Z = 2;
