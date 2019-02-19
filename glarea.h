@@ -22,6 +22,7 @@ public:
 
 public slots:
     void setRadius(double radius);
+    void setCoupe();
 
 signals:  // On ne les implémente pas, elles seront générées par MOC ;
           // les paramètres seront passés aux slots connectés.
@@ -42,8 +43,7 @@ protected:
     void mousePressEvent(QMouseEvent *ev) override;
     void mouseReleaseEvent(QMouseEvent *ev) override;
     void mouseMoveEvent(QMouseEvent *ev) override;
-    void paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_fac, GLfloat coul_r, GLfloat coul_v, GLfloat coul_b);
-
+    void paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_fac, GLfloat coul_r, GLfloat coul_v, GLfloat coul_b, bool coupe);
 private:
     double m_angle = 0;
     QTimer *m_timer = nullptr;
@@ -58,6 +58,7 @@ private:
     int X = 0;
     int Y = 1;
     int Z = 2;
+    bool coupe;
     QMatrix4x4 matrix;
     QMatrix4x4 matrix2;
 

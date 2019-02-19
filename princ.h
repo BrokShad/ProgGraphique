@@ -17,6 +17,8 @@ public slots:
 
 protected slots:
     void onSliderRadius(int value);
+private slots:
+    void on_checkBox_clicked();
 };
 
 #endif // PRINC_H

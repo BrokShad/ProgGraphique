@@ -29,3 +29,8 @@ void Princ::onSliderRadius(int value)
     qDebug() << "  emit radiusChanged()";
     emit glarea->radiusChanged(value/20.0);
 }
+
+void Princ::on_checkBox_clicked()
+{
+    emit glarea->setCoupe();
+}
