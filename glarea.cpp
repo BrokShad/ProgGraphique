@@ -198,7 +198,7 @@ void GLArea::paintGL()
     matrix.perspective(60.0f, m_radius, 0.1f, 100.0f);  // = gluPerspective
 
     // Remplace gluLookAt (0, 0, 3.0, 0, 0, 0, 0, 1, 0);
-    matrix.translate(0, 0, -3.0);
+    matrix.translate(0, 0, -4.0);
 
 
     //    H[X] = G[X] + GH * cos(PI - m_anim);
@@ -207,8 +207,9 @@ void GLArea::paintGL()
     //    I[X] = H[X];
 
     // Rotation de la scène pour l'animation
-    matrix.rotate(m_angle, 0, 1, 0);
-    matrix.translate(0,0,deplacement);
+    matrix.rotate(deplacementZ,0,0,1);
+    matrix.rotate(deplacementY,0,1,0);
+    matrix.rotate(deplacementX,1,0,0);
 
     QMatrix4x4 matrix2 = matrix;
 
@@ -229,6 +230,7 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
 
     static float G[2] = {0, 0};
     static float H[2] = {-0.5f, 0};
+    static float Hbis[2] = {-0.5f, 0};
     static float I[2] = {-0.5f, 0};
     static float J[2] = {0, 0};
     static float beta = 0;
@@ -258,6 +260,39 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
     paintCyl(matrix2,1, 0.15f, nb_fac, 0.4, 0.9, 0.9);
     matrix2 = matrix3;
 
+    //H2
+    matrix2.translate(H[X], H[Y], 0.5);
+    paintCyl(matrix2,0.2, 0.25f, nb_fac, 0.4, 0.9, 0.9);
+    matrix2 = matrix3;
+
+
+    //H2
+    matrix2.translate(H[X], H[Y], -0.5);
+    paintCyl(matrix2,0.2, 0.25f, nb_fac, 0.4, 0.9, 0.9);
+    matrix2 = matrix3;
+
+    Hbis[X] = G[X] + GH * -cos(PI - m_anim)*i;
+    Hbis[Y] = G[Y] + GH * -sin(PI - m_anim)*i;
+
+    if (i != 1) {
+
+        //Hbis
+        matrix2.translate(Hbis[X]/2, Hbis[Y]/2, -0.5);
+        matrix2.rotate(90,0,1,0);
+        matrix2.rotate(-(PI-m_anim)*180/PI,1,0,0);
+        matrix2.translate(0,0,-0.1);
+        paintCyl(matrix2,0.9, 0.1f, nb_fac, 0.4, 0.9, 0.9);
+        matrix2 = matrix3;
+
+        //Hbis
+        matrix2.translate(Hbis[X]/2, Hbis[Y]/2, 0.5);
+        matrix2.rotate(90,0,1,0);
+        matrix2.rotate(-(PI-m_anim)*180/PI,1,0,0);
+        matrix2.translate(0,0,-0.1);
+        paintCyl(matrix2,0.9, 0.1f, nb_fac, 0.4, 0.9, 0.9);
+        matrix2 = matrix3;
+    }
+
     //(J)
     matrix2.translate(J[X], J[Y], 0);
     paintCyl(matrix2,0.33f, 0.13f, nb_fac, 0.4, 0.9, 0.9);
@@ -278,16 +313,18 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
     matrix2 = matrix3;
 
     //(KJ)
-    matrix2.translate(J[X]-1.3, J[Y], 0);
+    matrix2.translate(J[X]-1.5, J[Y], 0);
     matrix2.rotate(90, 0, 1.0f, 0);
-    paintCyl(matrix2, 0.8, 0.3, nb_fac, 0.4, 0.9, 0.9);
+    paintCyl(matrix2, 1.2, 0.3, nb_fac, 0.4, 0.9, 0.9);
     matrix2 = matrix3;
 
     //PISTON fixe
-    matrix2.translate(-2.4, 0, 0);
+    matrix2.translate(-3, 0, 0);
     matrix2.rotate(90,0,1,0);
-    paintCyl(matrix2,1, 0.4, 120, 0.9, 0.9, 0.4);
+    paintCyl(matrix2,1.3, 0.4, 120, 0.9, 0.9, 0.4);
     matrix2 = matrix3;
+
+
 
 //    //CYL 18
 //    float cyl18[3];
@@ -348,12 +385,30 @@ void GLArea::keyPressEvent(QKeyEvent *ev)
         else setRadius(m_radius+0.05);
         break;
     case Qt::Key_Q :
-        deplacement += 0.2;
+        deplacementZ += 2;
         update();
         break;
 
     case Qt::Key_D :
-        deplacement -= 0.2;
+        deplacementZ -= 2;
+        update();
+        break;
+
+    case Qt::Key_Z :
+        deplacementY -= 2;
+        update();
+        break;
+    case Qt::Key_S :
+        deplacementY += 2;
+        update();
+        break;
+
+    case Qt::Key_L :
+        deplacementX -= 2;
+        update();
+        break;
+    case Qt::Key_O :
+        deplacementX += 2;
         update();
         break;
 
