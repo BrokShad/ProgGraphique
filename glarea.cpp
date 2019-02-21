@@ -17,8 +17,8 @@
 #endif
 
 
-std::vector<GLfloat> vertices;
-std::vector<GLfloat> colors;
+QVector<GLfloat> vertices;
+QVector<GLfloat> colors;
 std::vector<GLfloat> vertices2;
 std::vector<GLfloat> colors2;
 static const QString vertexShaderFile   = ":/basic.vsh";
@@ -57,17 +57,50 @@ GLArea::~GLArea()
     // dans le destructeur le contexte GL n'est pas automatiquement rendu courant.
     makeCurrent();
 
+    tearGLObjects();
     // ici destructions de ressources GL
 
     doneCurrent();
 }
 
+void GLArea::makeGLObjects()
+{
+    paintCyl(matrix2,1, 0.15f, nb_fac, 0.4, 0.9, 0.9,false); //H
+    paintCyl(matrix2,0.2, 0.25f, nb_fac, 0.4, 0.9, 0.9,false); //H2
+    paintCyl(matrix2,0.9, 0.1f, nb_fac, 0.4, 0.9, 0.9,false); //HBIS
+    paintCyl(matrix2,0.33f, 0.13f, nb_fac, 0.4, 0.9, 0.9,false); //J
+    paintCyl(matrix2,0.8, 0.1f, nb_fac, 0.4, 0.9, 0.9,false); //JH
+    paintCyl(matrix2, 1.2, 0.3, nb_fac, 0.4, 0.9, 0.9,false); //KJ
+    paintCyl(matrix2, 1, 0.1f, nb_fac, 0.4, 0.9, 0.9,false); //KJ
+    paintCyl(matrix2,1.3, 0.4, nb_fac, 0.9, 0.9, 0.4,coupe); //FIXE
+
+    QVector<GLfloat> vertData;
+    for (int i = 0; i < vertices.size()/3; ++i) {
+        // coordonnées sommets
+        for (int j = 0; j < 3; j++)
+            vertData.append(vertices[i*3+j]);
+        // couleurs sommets
+        for (int j = 0; j < 3; j++)
+            vertData.append(colors[i*3+j]);
+    }
+
+    m_vbo.create();
+    m_vbo.bind();
+    m_vbo.allocate(vertData.constData(),vertData.count() * sizeof(GLfloat));
+}
+
+void GLArea::tearGLObjects()
+{
+    m_vbo.destroy();
+}
 
 void GLArea::initializeGL()
 {
     qDebug() << __FUNCTION__ ;
     initializeOpenGLFunctions();
     glEnable(GL_DEPTH_TEST);
+
+    makeGLObjects();
 
     // shaders
     m_program = new QOpenGLShaderProgram(this);
@@ -187,45 +220,12 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
 
         }
     }
-    m_program->bind();
 
-    m_program->setUniformValue(m_matrixUniform, matrix2);
-    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());
-    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors.data());
+    //    vertices.clear();
+    //    colors.clear();
 
-    glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
-    glEnableVertexAttribArray(m_colAttr);
-
-    glDrawArrays(GL_TRIANGLES, 0, nb_facTmp*12);
-
-    glDisableVertexAttribArray(m_posAttr);
-    glDisableVertexAttribArray(m_colAttr);
-
-    m_program->release();
-
-    vertices.clear();
-    colors.clear();
-
-    //        m_program->bind();
-
-    //        m_program->setUniformValue(m_matrixUniform, matrix2);
-    //        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &vertices2[0]);
-    //        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &colors2[0]);
-
-    //        glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
-    //        glEnableVertexAttribArray(m_colAttr);
-
-    //        glDrawArrays(GL_POLYGON, 0, nb_facTmp);
-
-    //        glDisableVertexAttribArray(m_posAttr);
-    //        glDisableVertexAttribArray(m_colAttr);
-    //        m_program->release();
-    //        vertices2.clear();
-
-    //        colors2.clear();
-    //    }
-    //    // on ne met pas glutSwapBuffers(); !
 }
+
 
 void GLArea::setCoupe()
 {
@@ -238,7 +238,8 @@ void GLArea::paintGL()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_program->bind(); // active le shader program
+    //    m_program->bind(); // active le shader program
+
     matrix.setToIdentity();
     GLfloat hr = m_radius, wr = hr * m_ratio;            // = glFrustum
     //matrix.frustum(-wr, wr, -hr, hr, 0.1, 5.0);
@@ -246,12 +247,6 @@ void GLArea::paintGL()
 
     // Remplace gluLookAt (0, 0, 3.0, 0, 0, 0, 0, 1, 0);
     matrix.translate(0, 0, -4.0);
-
-
-    //    H[X] = G[X] + GH * cos(PI - m_anim);
-    //    H[Y] = G[Y] + GH * sin(PI - m_anim);
-
-    //    I[X] = H[X];
 
     // Rotation de la scène pour l'animation
     matrix.rotate(deplacementZ,0,0,1);
@@ -262,10 +257,30 @@ void GLArea::paintGL()
 
     m_program->setUniformValue(m_matrixUniform, matrix);
 
-        paintMoteur(matrix2);
-//    paintCyl(matrix2,1,1,100,1,1,1,false);
+
+    m_program->bind();
+
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setAttributeBuffer(m_posAttr, GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
+    m_program->setAttributeBuffer(m_colAttr, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
+//    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());
+//    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors.data());
+
+//    glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
+//    glEnableVertexAttribArray(m_colAttr);
+    m_program->enableAttributeArray(m_posAttr);
+    m_program->enableAttributeArray(m_colAttr);
+
+    paintMoteur(matrix2);
+    qDebug() << "vector size : " << vertices.size()/3 << endl;
+
+//    glDisableVertexAttribArray(m_posAttr);
+//    glDisableVertexAttribArray(m_colAttr);
+    m_program->disableAttributeArray(m_posAttr);
+    m_program->disableAttributeArray(m_colAttr);
 
     m_program->release();
+
 }
 
 static float HJ = 0.8f;
@@ -274,8 +289,6 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
 {
 
     QMatrix4x4 matrix3 = matrix2;
-    int nb_fac = 30;
-
     static float G[2] = {0, 0};
     static float H[2] = {-0.5f, 0};
     static float Hbis[2] = {-0.5f, 0};
@@ -305,18 +318,21 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
 
     //H
     matrix2.translate(H[X], H[Y], 0);
-    paintCyl(matrix2,1, 0.15f, nb_fac, 0.4, 0.9, 0.9,false);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, 0, nb_fac*12);
     matrix2 = matrix3;
 
     //H2
     matrix2.translate(H[X], H[Y], 0.5);
-    paintCyl(matrix2,0.2, 0.25f, nb_fac, 0.4, 0.9, 0.9,false);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, nb_fac*12, nb_fac*12);
     matrix2 = matrix3;
 
 
     //H2
     matrix2.translate(H[X], H[Y], -0.5);
-    paintCyl(matrix2,0.2, 0.25f, nb_fac, 0.4, 0.9, 0.9,false);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, nb_fac*12, nb_fac*12);
     matrix2 = matrix3;
 
     Hbis[X] = G[X] + GH * -cos(PI - m_anim)*i;
@@ -329,7 +345,8 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
         matrix2.rotate(90,0,1,0);
         matrix2.rotate(-(PI-m_anim)*180/PI,1,0,0);
         matrix2.translate(0,0,-0.1);
-        paintCyl(matrix2,0.9, 0.1f, nb_fac, 0.4, 0.9, 0.9,false);
+        m_program->setUniformValue(m_matrixUniform, matrix2);
+        glDrawArrays(GL_TRIANGLES, 2*nb_fac*12, nb_fac*12);
         matrix2 = matrix3;
 
         //Hbis
@@ -337,13 +354,15 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
         matrix2.rotate(90,0,1,0);
         matrix2.rotate(-(PI-m_anim)*180/PI,1,0,0);
         matrix2.translate(0,0,-0.1);
-        paintCyl(matrix2,0.9, 0.1f, nb_fac, 0.4, 0.9, 0.9,false);
+        m_program->setUniformValue(m_matrixUniform, matrix2);
+        glDrawArrays(GL_TRIANGLES, 2*nb_fac*12, nb_fac*12);
         matrix2 = matrix3;
     }
 
     //(J)
     matrix2.translate(J[X], J[Y], 0);
-    paintCyl(matrix2,0.33f, 0.13f, nb_fac, 0.4, 0.9, 0.9,false);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, 3*nb_fac*12, nb_fac*12);
     matrix2 = matrix3;
 
     //JH
@@ -351,37 +370,30 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
     matrix2.rotate(beta*180/PI, 0, 0, 1);
     matrix2.translate(HJ/2.0f, 0, 0);
     matrix2.rotate(90, 0, 1.0f, 0);
-    paintCyl(matrix2,HJ, 0.1f, nb_fac, 0.4, 0.9, 0.9,false);
-    matrix2 = matrix3;
-
-    //(KJ)
-    matrix2.translate(J[X]-0.5, J[Y], 0);
-    matrix2.rotate(90, 0, 1.0f, 0);
-    paintCyl(matrix2, 1, 0.1f, nb_fac, 0.4, 0.9, 0.9,false);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, 4*nb_fac*12, nb_fac*12);
     matrix2 = matrix3;
 
     //(KJ)
     matrix2.translate(J[X]-1.5, J[Y], 0);
     matrix2.rotate(90, 0, 1.0f, 0);
-    paintCyl(matrix2, 1.2, 0.3, nb_fac, 0.4, 0.9, 0.9,false);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, 5*nb_fac*12, nb_fac*12);
+    matrix2 = matrix3;
+
+    //(KJ)
+    matrix2.translate(J[X]-0.5, J[Y], 0);
+    matrix2.rotate(90, 0, 1.0f, 0);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, 6*nb_fac*12, nb_fac*12);
     matrix2 = matrix3;
 
     //PISTON fixe
     matrix2.translate(-3, 0, 0);
     matrix2.rotate(90,0,1,0);
-    paintCyl(matrix2,1.3, 0.4, 120, 0.9, 0.9, 0.4,coupe);
+    m_program->setUniformValue(m_matrixUniform, matrix2);
+    glDrawArrays(GL_TRIANGLES, 7*nb_fac*12, nb_fac*12);
     matrix2 = matrix3;
-
-
-
-    //    //CYL 18
-    //    float cyl18[3];
-    //    cyl18[Z] = cyl17[Z]-e_cyl17*0.45;
-
-    //    matrix2.translate(0,0,cyl18[Z]);
-    //    float e_cyl18 = e_cyl4;
-    //    float l_cyl18 = l_cyl4;
-    //    paintCyl(matrix2, e_cyl18,l_cyl18,nb_fac,0.9,0.4,0.9);
 
 
 

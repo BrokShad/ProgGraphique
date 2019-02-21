@@ -7,6 +7,7 @@
 #include <QOpenGLFunctions>
 #include <QKeyEvent>
 #include <QTimer>
+#include <QOpenGLBuffer>
 
 // Pour utiliser les shaders
 #include <QtGui/QOpenGLShaderProgram>
@@ -58,10 +59,15 @@ private:
     int X = 0;
     int Y = 1;
     int Z = 2;
-    bool coupe;
+    bool coupe = false;
     QMatrix4x4 matrix;
     QMatrix4x4 matrix2;
 
+    void makeGLObjects();
+    void tearGLObjects(); // tear = démolir
+    QOpenGLBuffer m_vbo;
+
+    int nb_fac = 30;
     // Pour utiliser les shaders
     QOpenGLShaderProgram *m_program;
     int m_posAttr;
