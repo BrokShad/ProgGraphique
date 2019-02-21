@@ -105,6 +105,7 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
     for (int var = 0; var < nb_facTmp; ++var) {
         //        matrix.rotate(alpha, 0, 0, 1);
 
+        //A
         vertices.push_back(cos(alpha*var)*r_cyl);
         vertices.push_back(sin(alpha*var)*r_cyl);
         vertices.push_back(ep_cyl/2);
@@ -113,6 +114,7 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
         colors.push_back(coul_v*0.2);
         colors.push_back(coul_b*0.2);
 
+        //B
         vertices.push_back(cos(alpha*var)*r_cyl);
         vertices.push_back(sin(alpha*var)*r_cyl);
         vertices.push_back(-ep_cyl/2);
@@ -121,6 +123,7 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
         colors.push_back(coul_v*0.2);
         colors.push_back(coul_b*0.2);
 
+        //C
         vertices.push_back(cos(alpha*var + alpha)*r_cyl);
         vertices.push_back(sin(alpha*var + alpha)*r_cyl);
         vertices.push_back(-ep_cyl/2);
@@ -129,15 +132,61 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
         colors.push_back(coul_v*0.2);
         colors.push_back(coul_b*0.2);
 
+        //C
         vertices.push_back(cos(alpha*var + alpha)*r_cyl);
         vertices.push_back(sin(alpha*var + alpha)*r_cyl);
+        vertices.push_back(-ep_cyl/2);
+
+        colors.push_back(coul_r*0.2);
+        colors.push_back(coul_v*0.2);
+        colors.push_back(coul_b*0.2);
+
+        //D
+        vertices.push_back(cos(alpha*var + alpha)*r_cyl);
+        vertices.push_back(sin(alpha*var + alpha)*r_cyl);
+        vertices.push_back(ep_cyl/2);
+
+        colors.push_back(coul_r*0.2);
+        colors.push_back(coul_v*0.2);
+        colors.push_back(coul_b*0.2);
+
+        //A
+        vertices.push_back(cos(alpha*var)*r_cyl);
+        vertices.push_back(sin(alpha*var)*r_cyl);
         vertices.push_back(ep_cyl/2);
 
         colors.push_back(coul_r*0.2);
         colors.push_back(coul_v*0.2);
         colors.push_back(coul_b*0.2);
     }
+    for(int i = -1 ; i < 2 ; i+=2) {
+        for (int var = 0; var < nb_facTmp; ++var) {
+            vertices.push_back(cos(alpha*var)*r_cyl);
+            vertices.push_back(sin(alpha*var)*r_cyl);
+            vertices.push_back(i*ep_cyl/2);
 
+            colors.push_back(coul_r);
+            colors.push_back(coul_v);
+            colors.push_back(coul_b);
+
+            vertices.push_back(cos(alpha*(var-1))*r_cyl);
+            vertices.push_back(sin(alpha*(var-1))*r_cyl);
+            vertices.push_back(i*ep_cyl/2);
+
+            colors.push_back(coul_r);
+            colors.push_back(coul_v);
+            colors.push_back(coul_b);
+
+            vertices.push_back(0);
+            vertices.push_back(0);
+            vertices.push_back(i*ep_cyl/2);
+
+            colors.push_back(coul_r);
+            colors.push_back(coul_v);
+            colors.push_back(coul_b);
+
+        }
+    }
     m_program->bind();
 
     m_program->setUniformValue(m_matrixUniform, matrix2);
@@ -147,7 +196,7 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
     glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
     glEnableVertexAttribArray(m_colAttr);
 
-    glDrawArrays(GL_QUADS, 0, nb_facTmp*4);
+    glDrawArrays(GL_TRIANGLES, 0, nb_facTmp*12);
 
     glDisableVertexAttribArray(m_posAttr);
     glDisableVertexAttribArray(m_colAttr);
@@ -157,36 +206,25 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
     vertices.clear();
     colors.clear();
 
-    for(int i = -1 ; i < 2 ; i+=2) {
-        for (int var = 0; var < nb_facTmp; ++var) {
-            vertices2.push_back(cos(alpha*var)*r_cyl);
-            vertices2.push_back(sin(alpha*var)*r_cyl);
-            vertices2.push_back(i*ep_cyl/2);
+    //        m_program->bind();
 
-            colors2.push_back(coul_r);
-            colors2.push_back(coul_v);
-            colors2.push_back(coul_b);
+    //        m_program->setUniformValue(m_matrixUniform, matrix2);
+    //        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &vertices2[0]);
+    //        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &colors2[0]);
 
-        }
-        m_program->bind();
+    //        glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
+    //        glEnableVertexAttribArray(m_colAttr);
 
-        m_program->setUniformValue(m_matrixUniform, matrix2);
-        glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, &vertices2[0]);
-        glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, &colors2[0]);
+    //        glDrawArrays(GL_POLYGON, 0, nb_facTmp);
 
-        glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
-        glEnableVertexAttribArray(m_colAttr);
+    //        glDisableVertexAttribArray(m_posAttr);
+    //        glDisableVertexAttribArray(m_colAttr);
+    //        m_program->release();
+    //        vertices2.clear();
 
-        glDrawArrays(GL_POLYGON, 0, nb_facTmp);
-
-        glDisableVertexAttribArray(m_posAttr);
-        glDisableVertexAttribArray(m_colAttr);
-        m_program->release();
-        vertices2.clear();
-
-        colors2.clear();
-    }
-    // on ne met pas glutSwapBuffers(); !
+    //        colors2.clear();
+    //    }
+    //    // on ne met pas glutSwapBuffers(); !
 }
 
 void GLArea::setCoupe()
@@ -224,7 +262,8 @@ void GLArea::paintGL()
 
     m_program->setUniformValue(m_matrixUniform, matrix);
 
-    paintMoteur(matrix2);
+        paintMoteur(matrix2);
+//    paintCyl(matrix2,1,1,100,1,1,1,false);
 
     m_program->release();
 }
@@ -257,12 +296,12 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
     beta = atan(H[Y]/(abs(J[X] - H[X])));
 
     //KJ
-//    matrix2.rotate(m_angle, 0, 1.0f, 0.1f);
-//    matrix2.translate(0, 0, 0.2f);
-//    matrix2.translate(J[X]-1.8/2, J[Y], 0);
-//    matrix2.rotate(90, 0, 1.0f, 0);
-//    paintCyl(matrix2,1.8f, 0.1f, nb_fac, 0.9, 0.4, 0.9);
-//    matrix2 = matrix;
+    //    matrix2.rotate(m_angle, 0, 1.0f, 0.1f);
+    //    matrix2.translate(0, 0, 0.2f);
+    //    matrix2.translate(J[X]-1.8/2, J[Y], 0);
+    //    matrix2.rotate(90, 0, 1.0f, 0);
+    //    paintCyl(matrix2,1.8f, 0.1f, nb_fac, 0.9, 0.4, 0.9);
+    //    matrix2 = matrix;
 
     //H
     matrix2.translate(H[X], H[Y], 0);
@@ -335,14 +374,14 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
 
 
 
-//    //CYL 18
-//    float cyl18[3];
-//    cyl18[Z] = cyl17[Z]-e_cyl17*0.45;
+    //    //CYL 18
+    //    float cyl18[3];
+    //    cyl18[Z] = cyl17[Z]-e_cyl17*0.45;
 
-//    matrix2.translate(0,0,cyl18[Z]);
-//    float e_cyl18 = e_cyl4;
-//    float l_cyl18 = l_cyl4;
-//    paintCyl(matrix2, e_cyl18,l_cyl18,nb_fac,0.9,0.4,0.9);
+    //    matrix2.translate(0,0,cyl18[Z]);
+    //    float e_cyl18 = e_cyl4;
+    //    float l_cyl18 = l_cyl4;
+    //    paintCyl(matrix2, e_cyl18,l_cyl18,nb_fac,0.9,0.4,0.9);
 
 
 
@@ -366,10 +405,10 @@ void GLArea::paintMoteur(QMatrix4x4 matrix2 )
     paintPiston(matrix3,-1);
     matrix3 = matrix2;
 
-//    matrix3.translate(2,0,0);
-//    matrix3.rotate(90,0,1,0);
-//    paintPiston(matrix3);
-//    matrix3 = matrix2;
+    //    matrix3.translate(2,0,0);
+    //    matrix3.rotate(90,0,1,0);
+    //    paintPiston(matrix3);
+    //    matrix3 = matrix2;
 }
 
 
