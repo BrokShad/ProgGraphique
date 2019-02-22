@@ -250,6 +250,25 @@ void GLArea::setCoupe()
     update();
 }
 
+void GLArea::setTimer()
+{
+    if (m_timer->isActive())
+        m_timer->stop();
+    else m_timer->start();
+}
+
+void GLArea::setRotate(int value)
+{
+    rotate = value;
+    update();
+}
+
+void GLArea::setAcceleration(double value)
+{
+    acceleration = value;
+    update();
+}
+
 void GLArea::paintGL()
 {
     qDebug() << __FUNCTION__ ;
@@ -269,7 +288,7 @@ void GLArea::paintGL()
     matrix.rotate(-100,1,0,0);
 
     // Rotation de la scène pour l'animation
-    matrix.rotate(rotate,0.3,1,0.7);
+    matrix.rotate(rotate,0.5,1,1);
 
     m_program->setUniformValue("matrix", matrix);
     m_program->setAttributeBuffer("posAttr", GL_FLOAT, 0, 3, 8 * sizeof(GLfloat));
@@ -524,7 +543,6 @@ void GLArea::mouseMoveEvent(QMouseEvent *ev)
 
 void GLArea::onTimeout()
 {
-    qDebug() << __FUNCTION__ << "ok";
     m_anim += acceleration;
     if (m_anim > 360) m_anim = 0;
     update();

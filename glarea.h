@@ -25,6 +25,9 @@ public:
 public slots:
     void setRadius(double radius);
     void setCoupe();
+    void setTimer();
+    void setRotate(int value);
+    void setAcceleration(double value);
 
 signals:  // On ne les implémente pas, elles seront générées par MOC ;
           // les paramètres seront passés aux slots connectés.

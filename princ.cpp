@@ -34,3 +34,20 @@ void Princ::on_checkBox_clicked()
 {
     emit glarea->setCoupe();
 }
+
+void Princ::on_pushButton_clicked()
+{
+    emit glarea->setTimer();
+}
+
+void Princ::on_horizontalSlider_2_valueChanged(int value)
+{
+    emit glarea->setRotate(value);
+}
+
+void Princ::on_horizontalSlider_valueChanged(int value)
+{
+    double valueTmp = (double) value/100;
+    qDebug() <<value <<  valueTmp << endl;
+    emit glarea->setAcceleration(valueTmp);
+}
