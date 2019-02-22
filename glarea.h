@@ -54,6 +54,7 @@ private:
     double m_ratio = 50;
     double m_alpha = 0;
     double rotate = 0;
+    double acceleration = 0.05;
     double deplacementZ = -3;
     double deplacementY = -3;
     double deplacementX = -3;

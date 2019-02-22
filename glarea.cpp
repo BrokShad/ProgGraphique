@@ -79,7 +79,8 @@ void GLArea::makeGLObjects()
     paintCyl(matrix2,0.8, 0.1f, nb_fac, 0.4, 0.9, 0.9,false); //JH
     paintCyl(matrix2, 1.2, 0.3, nb_fac, 0.4, 0.9, 0.9,false); //KJ
     paintCyl(matrix2, 1, 0.1f, nb_fac, 0.4, 0.9, 0.9,false); //KJ
-    paintCyl(matrix2,1.3, 0.4, nb_fac, 0.9, 0.9, 0.4,coupe); //FIXE
+    paintCyl(matrix2,1.3, 0.4, nb_fac, 0.9, 0.9, 0.4,false); //FIXE
+    paintCyl(matrix2,1.3, 0.4, nb_fac, 0.9, 0.9, 0.4,true);
 
     QVector<GLfloat> vertData;
     for (int i = 0; i < vertices.size()/3; ++i) {
@@ -265,6 +266,7 @@ void GLArea::paintGL()
 
     // Remplace gluLookAt (0, 0, 3.0, 0, 0, 0, 0, 1, 0);
     matrix.translate(0, 0, -10.0);
+    matrix.rotate(-100,1,0,0);
 
     // Rotation de la scène pour l'animation
     matrix.rotate(rotate,0.3,1,0.7);
@@ -421,9 +423,15 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
     matrix2.translate(-3, 0, 0);
     matrix2.rotate(90,0,1,0);
     m_program->setUniformValue("matrix", matrix2);
-    m_textures[0]->bind();
-    glDrawArrays(GL_TRIANGLES, 7*nb_fac*12, nb_fac*12);
-    m_textures[0]->release();
+    if (coupe) {
+        m_textures[0]->bind();
+        glDrawArrays(GL_TRIANGLES, 8*nb_fac*12, nb_fac*6);
+        m_textures[0]->release();
+    } else {
+        m_textures[0]->bind();
+        glDrawArrays(GL_TRIANGLES, 7*nb_fac*12, nb_fac*12);
+        m_textures[0]->release();
+    }
     matrix2 = matrix3;
 
 
@@ -466,18 +474,27 @@ void GLArea::keyPressEvent(QKeyEvent *ev)
         update();
         break;
     case Qt::Key_D :
-        if (m_timer->isActive())
-            m_timer->stop();
-        else m_timer->start();
+        acceleration = 0.05;
+        m_timer->start();
         break;
+    case Qt::Key_S :
+        m_timer->stop();
+        break;
+    case Qt::Key_A :
+        if (ev->text() == "a"){
+            if (acceleration > 0){
+                acceleration-=0.05;
+            } else if (acceleration < 0.001){
+                acceleration = 0;
+            }
+        }
+        else if (acceleration < 0.65) {
+            acceleration += 0.05;
+        }
+        break;
+
+
     case Qt::Key_R :
-        if (ev->text() == "r")
-            setRadius(m_radius-0.05);
-        else setRadius(m_radius+0.05);
-        break;
-
-
-    case Qt::Key_T :
         rotate += 3;
         if (rotate >= 360) rotate -= 360;
         update();
@@ -508,7 +525,7 @@ void GLArea::mouseMoveEvent(QMouseEvent *ev)
 void GLArea::onTimeout()
 {
     qDebug() << __FUNCTION__ << "ok";
-    m_anim += 0.2;
+    m_anim += acceleration;
     if (m_anim > 360) m_anim = 0;
     update();
 }
