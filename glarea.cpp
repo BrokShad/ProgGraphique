@@ -65,6 +65,13 @@ GLArea::~GLArea()
 
 void GLArea::makeGLObjects()
 {
+
+    GLfloat texCoords[] = {
+        0, 0,
+        1, 0,
+        1, 1
+    };
+
     paintCyl(matrix2,1, 0.15f, nb_fac, 0.4, 0.9, 0.9,false); //H
     paintCyl(matrix2,0.2, 0.25f, nb_fac, 0.4, 0.9, 0.9,false); //H2
     paintCyl(matrix2,0.9, 0.1f, nb_fac, 0.4, 0.9, 0.9,false); //HBIS
@@ -79,18 +86,30 @@ void GLArea::makeGLObjects()
         // coordonnées sommets
         for (int j = 0; j < 3; j++)
             vertData.append(vertices[i*3+j]);
-        // couleurs sommets
         for (int j = 0; j < 3; j++)
             vertData.append(colors[i*3+j]);
+        for (int j = 0; j < 2; j++)
+            vertData.append(texCoords[j]);
+        // couleurs sommets
     }
 
     m_vbo.create();
     m_vbo.bind();
     m_vbo.allocate(vertData.constData(),vertData.count() * sizeof(GLfloat));
+
+    for (int i = 0; i < 1; i++) {
+        QString nom = QString(":/metal.jpg");
+        QImage image(nom);
+        if (image.isNull())
+            qDebug() << "load image" << nom << "failed";
+        else qDebug() << "load image" << nom << image.size();
+        m_textures[i] = new QOpenGLTexture(image);
+    }
 }
 
 void GLArea::tearGLObjects()
 {
+    delete m_textures[0];
     m_vbo.destroy();
 }
 
@@ -101,7 +120,7 @@ void GLArea::initializeGL()
     glEnable(GL_DEPTH_TEST);
 
     makeGLObjects();
-
+    qDebug() << "makeGlObj vectSize : " << vertices.size() << endl;
     // shaders
     m_program = new QOpenGLShaderProgram(this);
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, vertexShaderFile);  // compile
@@ -111,10 +130,7 @@ void GLArea::initializeGL()
         qWarning() << m_program->log();
     }
 
-    // récupère identifiants de "variables" dans les shaders
-    m_posAttr = m_program->attributeLocation("posAttr");
-    m_colAttr = m_program->attributeLocation("colAttr");
-    m_matrixUniform = m_program->uniformLocation("matrix");
+    m_program->setUniformValue("texture", 0);
 }
 
 void GLArea::resizeGL(int w, int h)
@@ -230,6 +246,7 @@ void GLArea::paintCyl(QMatrix4x4 matrix2, GLfloat ep_cyl, GLfloat r_cyl, int nb_
 void GLArea::setCoupe()
 {
     coupe = !coupe;
+    update();
 }
 
 void GLArea::paintGL()
@@ -239,6 +256,7 @@ void GLArea::paintGL()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //    m_program->bind(); // active le shader program
+    m_program->bind();
 
     matrix.setToIdentity();
     GLfloat hr = m_radius, wr = hr * m_ratio;            // = glFrustum
@@ -246,38 +264,31 @@ void GLArea::paintGL()
     matrix.perspective(60.0f, m_radius, 0.1f, 100.0f);  // = gluPerspective
 
     // Remplace gluLookAt (0, 0, 3.0, 0, 0, 0, 0, 1, 0);
-    matrix.translate(0, 0, -4.0);
+    matrix.translate(0, 0, -10.0);
 
     // Rotation de la scène pour l'animation
-    matrix.rotate(deplacementZ,0,0,1);
-    matrix.rotate(deplacementY,0,1,0);
-    matrix.rotate(deplacementX,1,0,0);
+    matrix.rotate(rotate,0.3,1,0.7);
 
-    QMatrix4x4 matrix2 = matrix;
+    m_program->setUniformValue("matrix", matrix);
+    m_program->setAttributeBuffer("posAttr", GL_FLOAT, 0, 3, 8 * sizeof(GLfloat));
+    m_program->setAttributeBuffer("colAttr", GL_FLOAT, 3 * sizeof(GLfloat), 3, 8 * sizeof(GLfloat));
+    m_program->setAttributeBuffer("texAttr", GL_FLOAT, 6 * sizeof(GLfloat), 2, 7 * sizeof(GLfloat));
+    //    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());
+    //    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors.data());
 
-    m_program->setUniformValue(m_matrixUniform, matrix);
+    //    glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
+    //    glEnableVertexAttribArray(m_colAttr);
+    m_program->enableAttributeArray("posAttr");
+    m_program->enableAttributeArray("texAttr");
+    m_program->enableAttributeArray("colAttr");
 
+    paintMoteur(matrix);
 
-    m_program->bind();
-
-    m_program->setUniformValue(m_matrixUniform, matrix2);
-    m_program->setAttributeBuffer(m_posAttr, GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
-    m_program->setAttributeBuffer(m_colAttr, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
-//    glVertexAttribPointer(m_posAttr, 3, GL_FLOAT, GL_FALSE, 0, vertices.data());
-//    glVertexAttribPointer(m_colAttr, 3, GL_FLOAT, GL_FALSE, 0, colors.data());
-
-//    glEnableVertexAttribArray(m_posAttr);  // rend le VAA accessible pour glDrawArrays
-//    glEnableVertexAttribArray(m_colAttr);
-    m_program->enableAttributeArray(m_posAttr);
-    m_program->enableAttributeArray(m_colAttr);
-
-    paintMoteur(matrix2);
-    qDebug() << "vector size : " << vertices.size()/3 << endl;
-
-//    glDisableVertexAttribArray(m_posAttr);
-//    glDisableVertexAttribArray(m_colAttr);
-    m_program->disableAttributeArray(m_posAttr);
-    m_program->disableAttributeArray(m_colAttr);
+    //    glDisableVertexAttribArray(m_posAttr);
+    //    glDisableVertexAttribArray(m_colAttr);
+    m_program->disableAttributeArray("posAttr");
+    m_program->disableAttributeArray("texAttr");
+    m_program->disableAttributeArray("colAttr");
 
     m_program->release();
 
@@ -318,21 +329,27 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
 
     //H
     matrix2.translate(H[X], H[Y], 0);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, 0, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
     //H2
     matrix2.translate(H[X], H[Y], 0.5);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
 
     //H2
     matrix2.translate(H[X], H[Y], -0.5);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
     Hbis[X] = G[X] + GH * -cos(PI - m_anim)*i;
@@ -345,8 +362,10 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
         matrix2.rotate(90,0,1,0);
         matrix2.rotate(-(PI-m_anim)*180/PI,1,0,0);
         matrix2.translate(0,0,-0.1);
-        m_program->setUniformValue(m_matrixUniform, matrix2);
+        m_program->setUniformValue("matrix", matrix2);
+        m_textures[0]->bind();
         glDrawArrays(GL_TRIANGLES, 2*nb_fac*12, nb_fac*12);
+        m_textures[0]->release();
         matrix2 = matrix3;
 
         //Hbis
@@ -354,15 +373,19 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
         matrix2.rotate(90,0,1,0);
         matrix2.rotate(-(PI-m_anim)*180/PI,1,0,0);
         matrix2.translate(0,0,-0.1);
-        m_program->setUniformValue(m_matrixUniform, matrix2);
+        m_program->setUniformValue("matrix", matrix2);
+        m_textures[0]->bind();
         glDrawArrays(GL_TRIANGLES, 2*nb_fac*12, nb_fac*12);
+        m_textures[0]->release();
         matrix2 = matrix3;
     }
 
     //(J)
     matrix2.translate(J[X], J[Y], 0);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, 3*nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
     //JH
@@ -370,29 +393,37 @@ void GLArea::paintPiston(QMatrix4x4 matrix2, int i)
     matrix2.rotate(beta*180/PI, 0, 0, 1);
     matrix2.translate(HJ/2.0f, 0, 0);
     matrix2.rotate(90, 0, 1.0f, 0);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, 4*nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
     //(KJ)
     matrix2.translate(J[X]-1.5, J[Y], 0);
     matrix2.rotate(90, 0, 1.0f, 0);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, 5*nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
     //(KJ)
     matrix2.translate(J[X]-0.5, J[Y], 0);
     matrix2.rotate(90, 0, 1.0f, 0);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, 6*nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
     //PISTON fixe
     matrix2.translate(-3, 0, 0);
     matrix2.rotate(90,0,1,0);
-    m_program->setUniformValue(m_matrixUniform, matrix2);
+    m_program->setUniformValue("matrix", matrix2);
+    m_textures[0]->bind();
     glDrawArrays(GL_TRIANGLES, 7*nb_fac*12, nb_fac*12);
+    m_textures[0]->release();
     matrix2 = matrix3;
 
 
@@ -434,7 +465,7 @@ void GLArea::keyPressEvent(QKeyEvent *ev)
         if (m_angle >= 360) m_angle -= 360;
         update();
         break;
-    case Qt::Key_A :
+    case Qt::Key_D :
         if (m_timer->isActive())
             m_timer->stop();
         else m_timer->start();
@@ -444,33 +475,7 @@ void GLArea::keyPressEvent(QKeyEvent *ev)
             setRadius(m_radius-0.05);
         else setRadius(m_radius+0.05);
         break;
-    case Qt::Key_Q :
-        deplacementZ += 2;
-        update();
-        break;
 
-    case Qt::Key_D :
-        deplacementZ -= 2;
-        update();
-        break;
-
-    case Qt::Key_Z :
-        deplacementY -= 2;
-        update();
-        break;
-    case Qt::Key_S :
-        deplacementY += 2;
-        update();
-        break;
-
-    case Qt::Key_L :
-        deplacementX -= 2;
-        update();
-        break;
-    case Qt::Key_O :
-        deplacementX += 2;
-        update();
-        break;
 
     case Qt::Key_T :
         rotate += 3;

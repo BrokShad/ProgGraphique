@@ -8,6 +8,7 @@
 #include <QKeyEvent>
 #include <QTimer>
 #include <QOpenGLBuffer>
+#include <QOpenGLTexture>
 
 // Pour utiliser les shaders
 #include <QtGui/QOpenGLShaderProgram>
@@ -62,6 +63,8 @@ private:
     bool coupe = false;
     QMatrix4x4 matrix;
     QMatrix4x4 matrix2;
+
+    QOpenGLTexture *m_textures[1];
 
     void makeGLObjects();
     void tearGLObjects(); // tear = démolir

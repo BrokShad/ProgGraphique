@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>basic.fsh</file>
         <file>basic.vsh</file>
+        <file>metal.jpg</file>
     </qresource>
 </RCC>

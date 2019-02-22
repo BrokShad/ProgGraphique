@@ -1,6 +1,6 @@
-varying lowp vec4 col;
+varying mediump vec4 texc;
+uniform sampler2D texture;
 
 void main() {
-   gl_FragColor = col;
+   gl_FragColor = texture2D(texture, texc.st);
 }
-
